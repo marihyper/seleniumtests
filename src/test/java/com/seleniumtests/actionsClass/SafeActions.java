@@ -16,9 +16,9 @@ import io.netty.handler.timeout.TimeoutException;
 
 public class SafeActions {
 	/*	Safe use methods class with exception handling	*/
-	private static final Duration TIMEOUT = Duration.ofSeconds(10);
+	private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
-	/**	FIND ELEMENT GENERIC method
+	/**	FIND ELEMENT
 	 * @param driver The WebDriver instance to pass to the expected conditions.
 	 * @param locator The By element = location of the element.
 	 * @return WebElement object.
@@ -29,11 +29,11 @@ public class SafeActions {
 		try {
 			return wait.until(ExpectedConditions.presenceOfElementLocated(locator));
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: " + locator.toString(), e);
+			throw new SafeActionsException("The page didn't load in the time limit: " + locator.toString() + ": " + e.getMessage());
 		}
 	}
 
-	/**	FIND TEXT method
+	/**	FIND TEXT
 	 * @param driver The WebDriver instance to pass to the expected conditions.
 	 * @param locator The By element = location of the element.
 	 * @return captured text String.
@@ -44,15 +44,15 @@ public class SafeActions {
 			new WebDriverWait(driver, TIMEOUT).until(ExpectedConditions.presenceOfElementLocated(locator));
 			return driver.findElement(locator).getText();
 		} catch (NoSuchElementException e) {
-			throw new SafeActionsException("Element not found: " + locator.toString(), e);
+			throw new SafeActionsException("Element not found: " + locator.toString() + ": " + e.getMessage());
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: ", e);
+			throw new SafeActionsException("The page didn't load in the time limit: " + e.getMessage());
 		} catch (Exception e) {
-			throw new SafeActionsException("Unexpected error: ", e);
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
 		}
 	}
 
-	/** CLICK method
+	/** CLICK
 	 * @param driver The WebDriver instance to pass to the expected conditions
 	 * @param locator The By element = location of the element
 	 * @throws SafeActionsException If the element is not found, if the page didn't load in time.
@@ -62,37 +62,45 @@ public class SafeActions {
 			new WebDriverWait(driver, TIMEOUT).until(ExpectedConditions.presenceOfElementLocated(locator));
 			driver.findElement(locator).click();
 		} catch (NoSuchElementException e) {
-			throw new SafeActionsException("Element not found: " + locator.toString(), e);
+			throw new SafeActionsException("Element not found: " + locator.toString() + ": " + e.getMessage());
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: ", e);	
+			throw new SafeActionsException("The page didn't load in the time limit: " + e.getMessage());
 		} catch (Exception e) {
-			throw new SafeActionsException("Unexpected error: ", e);
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
+		}
+	}
+
+	/**SCROLL BY AMOUNT
+	 * @param driver The WebDriver instance to pass to the expected conditions
+	 * @param deltaX position in the horizontal axis
+	 * @param deltaY position in the vertical axis
+	 * @throws SafeActionsException If scroll failed
+	 */
+	public static void safeScrollByAmount(WebDriver driver, int deltaX, int deltaY) throws SafeActionsException {
+		try {
+			Actions actions = new Actions(driver);
+			actions.scrollByAmount(deltaX, deltaY).perform();
+		} catch (Exception e) {
+			throw new SafeActionsException("Scroll by amount failed due to: " + e.getMessage());
 		}
 	}
 
 	/**DRAG AND DROP
 	 * @param driver The WebDriver instance to pass to the expected conditions
-	 * @param iframe If iframe in which the source is located
 	 * @param source Location of the element to be dragged
 	 * @param destination Location of where the element will be dropped
 	 * @throws SafeActionsException If the element is not found, if the page didn't load in time.
 	 */
-	public static void safeDragAndDrop(WebDriver driver, By iframe, By source, By destination) throws SafeActionsException {
+	public static void safeDragAndDrop(WebDriver driver, By source, By destination) throws SafeActionsException {
 		try {
 			Actions act = new Actions(driver);
-			/*Scroll by amount*/
-			act.scrollByAmount(0, 200);
-			/*Locate iframe by id or name*/
-			WebElement frameElement = driver.findElement(iframe);
-			/*Switch to the iframe*/
-			driver.switchTo().frame(frameElement);
-			/*Making sure elements are visible*/
+			// Assure elements are visible
 			new WebDriverWait(driver, TIMEOUT).until(ExpectedConditions.visibilityOfElementLocated(source));
 			new WebDriverWait(driver, TIMEOUT).until(ExpectedConditions.visibilityOfElementLocated(destination));
-			/*Assigning the source and destination to its WebElement counterparts*/
-			WebElement src = driver.findElement(source);
-			WebElement dest = driver.findElement(destination);
-			/*Performing the mouse actions*/
+			// Assigning the source and destination to its WebElement counterparts
+			WebElement src = safeFindElement(driver, source);
+			WebElement dest = safeFindElement(driver, destination);
+			// Perform the mouse actions
 			act.clickAndHold(src)
 					.pause(Duration.ofSeconds(2))
 					.moveToElement(dest)
@@ -100,18 +108,70 @@ public class SafeActions {
 					.release()
 					.build()
 					.perform();
-			/*After you are done with the iframe, don't forget to switch back to the main document*/
-			driver.switchTo().defaultContent();
 		} catch (NoSuchElementException e) {
-			System.out.println("Element not found: " + e);
+			throw new SafeActionsException("Element not found: "  + e.getMessage());
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: ", e);
+			throw new SafeActionsException("The page didn't load in the time limit: " + e.getMessage());
 		} catch (Exception e) {
-			throw new SafeActionsException("Unexpected error: ", e);
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
 		}
 	}
 
-	/** SEND KEYS method
+	/**IS ELEMENT IN VIEW
+	 * @param driver The WebDriver instance to pass to the expected conditions
+	 * @param locator The By element = location of the element
+	 * @return a boolean telling if object is on Viewport or not
+	 * @throws SafeActions.SafeActionsException – If there was an error checking the element visibility
+	 */
+	public static boolean isElementInViewport(WebDriver driver, By locator) {
+		try {
+			WebElement element = driver.findElement(locator);
+			JavascriptExecutor js = (JavascriptExecutor) driver;
+
+			boolean isElementInViewport = (Boolean) js.executeScript(
+					"var rect = arguments[0].getBoundingClientRect();" +
+							"return (" +
+							"rect.top >= 0 &&" +
+							"rect.left >= 0 &&" +
+							"rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&" +
+							"rect.right <= (window.innerWidth || document.documentElement.clientWidth)" +
+							");",
+					element
+			);
+
+			return isElementInViewport;
+		} catch (Exception e) {
+			System.out.println("Failed to determine if element is in viewport due to: " + e.getMessage());
+			return false;
+		}
+	}
+
+	/**ENTER FRAME
+	 * @param driver The WebDriver instance to pass to the expected conditions
+	 * @throws SafeActionsException If error occur in enter frame
+	 */
+	public static void enterIframe(WebDriver driver, By iframe) throws SafeActionsException {
+		try {
+			WebElement frameElement = safeFindElement(driver, iframe);
+			driver.switchTo().frame(frameElement);
+		} catch (Exception e) {
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
+		}
+	}
+
+	/**EXIT FRAME
+	 * @param driver The WebDriver instance to pass to the expected conditions
+	 * @throws SafeActionsException If error occur in exit frame
+	 */
+	public static void exitIframe(WebDriver driver) throws SafeActionsException {
+		try {
+			driver.switchTo().defaultContent();
+		} catch (Exception e) {
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
+		}
+	}
+
+	/** SEND KEYS
 	 * @param driver The WebDriver instance to pass to the expected conditions
 	 * @param locator The By element = location of the element
 	 * @param sentKeys The text that the user sends as input
@@ -122,15 +182,15 @@ public class SafeActions {
 			new WebDriverWait(driver, TIMEOUT).until(ExpectedConditions.presenceOfElementLocated(locator));
 			driver.findElement(locator).sendKeys(sentKeys);
 		} catch (NoSuchElementException e) {
-			throw new SafeActionsException("Element not found: " + locator.toString(), e);
+			throw new SafeActionsException("Element not found: " + locator.toString() + ": " + e.getMessage());
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: ", e);
+			throw new SafeActionsException("The page didn't load in the time limit: " + e.getMessage());
 		} catch (Exception e) {
-			throw new SafeActionsException("Unexpected error: ", e);
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
 		}
 	}
 
-	/** SEND SPECIAL KEYS method
+	/** SEND SPECIAL KEYS
 	 * @param driver The WebDriver instance to pass to the expected conditions
 	 * @param locator The By element = location of the element
 	 * @param key Special key used as input
@@ -141,15 +201,15 @@ public class SafeActions {
 			new WebDriverWait(driver, TIMEOUT).until(ExpectedConditions.presenceOfElementLocated(locator));
 			driver.findElement(locator).sendKeys(key);
 		} catch (NoSuchElementException e) {
-			throw new SafeActionsException("Element not found: " + locator.toString(), e);
+			throw new SafeActionsException("Element not found: " + locator.toString() + ": " + e.getMessage());
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: ", e);
+			throw new SafeActionsException("The page didn't load in the time limit: " + e.getMessage());
 		} catch (Exception e) {
-			throw new SafeActionsException("Unexpected error: ", e);
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
 		}
 	}
 
-	/**	WAIT PAGE method
+	/**	WAIT PAGE
 	 * @param driver The WebDriver instance to pass to the expected conditions.
 	 * @throws SafeActionsException If the page didn't load in time.
 	 */
@@ -158,9 +218,9 @@ public class SafeActions {
 			WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 			wait.until(ExpectedConditions.jsReturnsValue("return document.readyState === 'complete'"));
 		} catch (TimeoutException e) {
-			throw new SafeActionsException("The page didn't load in the time limit: ", e);
+			throw new SafeActionsException("The page didn't load in the time limit: " + e.getMessage());
 		} catch (Exception e) {
-			throw new SafeActionsException("Unexpected error: ", e);
+			throw new SafeActionsException("Unexpected error: " + e.getMessage());
 		}
 	}
 	

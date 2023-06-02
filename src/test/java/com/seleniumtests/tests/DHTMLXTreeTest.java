@@ -18,16 +18,23 @@ public class DHTMLXTreeTest {
     public void setUp() {
         driver = BrowserWebDriverPage.getFreshChromeDriver(URL_DHTMLX_STRING);
     }
-    
-    @Severity(SeverityLevel.CRITICAL)
-    @Test(priority = 1, description = "DragAndDrop Exercise Scenario")
-    @Description("Test to send the first drag and drop")
+
+    @Test(priority = 1, description = "DragAndDrop Exercise Scenario 1")
+    @Description("Test to send several drag and drop commands")
     public void dragAndDropTreeDHX(){
         new DHTMLXTreePage(driver)
-/*                .moveFirstElement()
-                .moveSecondElement()
-                .moveThirdElement()*/
-                .moveFourthElement()
+                .moveLawrenceBlock()
+                .moveIanRankin()
+                .moveNancy()
+                .moveMagazines()
+        ;
+    }
+
+    @Test(priority = 2, description = "DragAndDrop Exercise Scenario 2")
+    @Description("Test to send only one drag and drop command with element out of view")
+    public void dragAndDrop2TreeDHX(){
+        new DHTMLXTreePage(driver)
+                .moveMagazines()
         ;
     }
 }
