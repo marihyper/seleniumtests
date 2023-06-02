@@ -5,7 +5,6 @@ import com.seleniumtests.selectors.DHTMLXTreePageSelectors;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 
 public class DHTMLXTreePage extends BasePage {
     public DHTMLXTreePage(WebDriver driver) {
@@ -29,7 +28,7 @@ public class DHTMLXTreePage extends BasePage {
             SafeActions.exitIframe(driver);
             return this;
         } catch (SafeActions.SafeActionsException e){
-            System.out.println("Error interacting with 'Lawrence Block': " + e);
+            System.out.println("Error interacting with 'Lawrence Block': " + e.getMessage());
         }
         return this;
     }
@@ -51,7 +50,7 @@ public class DHTMLXTreePage extends BasePage {
             SafeActions.exitIframe(driver);
             return this;
         } catch (SafeActions.SafeActionsException e){
-            System.out.println("Error interacting with 'Ian Rankin': " + e);
+            System.out.println("Error interacting with 'Ian Rankin': " + e.getMessage());
         }
         return this;
     }
@@ -73,7 +72,7 @@ public class DHTMLXTreePage extends BasePage {
             SafeActions.exitIframe(driver);
             return this;
         } catch (SafeActions.SafeActionsException e){
-            System.out.println("Error interacting with 'Nancy': " + e);
+            System.out.println("Error interacting with 'Nancy': " + e.getMessage());
         }
         return this;
     }
@@ -92,8 +91,8 @@ public class DHTMLXTreePage extends BasePage {
                     By.xpath(DHTMLXTreePageSelectors.ZEND_FRAMEWORK_ACTION.getXpath()));
             SafeActions.exitIframe(driver);
             return this;
-        } catch (Exception e){
-            e.getCause().printStackTrace();
+        } catch (SafeActions.SafeActionsException e){
+            System.out.println("Error interacting with 'Magazines': " + e.getMessage());
         }
         return this;
     }

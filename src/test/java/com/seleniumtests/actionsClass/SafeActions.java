@@ -126,6 +126,7 @@ public class SafeActions {
 	public static boolean isElementInViewport(WebDriver driver, By locator) {
 		try {
 			WebElement element = driver.findElement(locator);
+			Thread.sleep(5000);
 			JavascriptExecutor js = (JavascriptExecutor) driver;
 
 			boolean isElementInViewport = (Boolean) js.executeScript(
